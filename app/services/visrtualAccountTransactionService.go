@@ -98,15 +98,9 @@ func (h *VirtualAccountTransactionService) Inquiry(dataResource resources.Inquir
 
 func (h *VirtualAccountTransactionService) Payment(dataResource resources.Payment) (map[string]interface{}, error) {
 
-	var promoPercentage float64
+	var finalAmount float64
 
 	promo, errPromo := h.virtualAccountRepo.GetPromo(dataResource.PromoCode)
-
-	if errPromo != nil {
-		promoPercentage = 0
-	} else {
-		promoPercentage = promo.DiscountPercent
-	}
 
 	getInquiry, errGetInquiry := h.virtualAccountRepo.GetInquiry(dataResource.VirtualAccountNumber)
 
@@ -118,7 +112,11 @@ func (h *VirtualAccountTransactionService) Payment(dataResource resources.Paymen
 		return nil, errors.New("your bill is already paid")
 	}
 
-	finalAmount := promoPercentage / 100 * float64(getInquiry.Bills.Amount)
+	if errPromo != nil {
+		finalAmount = float64(getInquiry.Bills.Amount)
+	} else {
+		finalAmount = promo.DiscountPercent / 100 * float64(getInquiry.Bills.Amount)
+	}
 
 	paymentPayload := map[string]interface{}{
 		"virtual_account_id": getInquiry.Bills.VirtualAccountID,
